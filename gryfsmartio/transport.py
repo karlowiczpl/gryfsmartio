@@ -1,10 +1,14 @@
 import asyncio
 import logging
 import re
+import serial_asyncio
+
+from .parsing import ParsedData, Subscription, subscriptableFunction 
 
 _LOGGER = logging.getLogger(__name__)
 
 TCP_PORT = 4510
+SERIAL_BAUDRATE = 115200
 
 class WriterBase:
 
@@ -29,6 +33,60 @@ class WriterBase:
     async def open(self) -> None:
         pass
 
+class SerialWriter(WriterBase):
+    _port: str
+    _baudrate: int
+    _reader: asyncio.StreamReader | None = None
+    _writer: asyncio.StreamWriter | None = None
+
+    def __init__(self, port: str, baudrate: int = SERIAL_BAUDRATE) -> None:
+        self._port = port
+        self._baudrate = baudrate
+
+    async def open(self) -> None:
+        self._reader, self._writer = await serial_asyncio.open_serial_connection(
+            url=self._port,
+            baudrate=self._baudrate
+        )
+
+    async def write(
+            self,
+            data: str
+    ) -> None:
+        if self._writer is None or self._writer.is_closing():
+            return
+
+        try:
+            if not data.endswith("\n"):
+                data += "\n"
+
+            self._writer.write(data.encode("utf-8"))
+   
+            await self._writer.drain()
+            _LOGGER.debug(f"Serial sent: {data.strip()}")
+
+        except Exception as err:
+            _LOGGER.error(f"Error while serial send: {err}")
+
+    async def read(self) -> str:
+        if self._reader is None:
+            return ""
+
+        line_bytes = await asyncio.wait_for(self._reader.readline(), timeout=10.0)
+
+        return line_bytes.decode("utf-8", errors="ignore").strip()
+
+    async def close(self) -> None:
+        if self._writer is not None:
+            try:
+                self._writer.close()
+                await self._writer.wait_closed()
+            except Exception:
+                pass
+
+        self._reader = None
+        self._writer = None
+
 class TcpWriter(WriterBase):
     _ip: str
     _reader = None
@@ -40,18 +98,20 @@ class TcpWriter(WriterBase):
     ) -> None:
         self._ip = ip
 
-    def write(
+    async def write(
         self,
         data: str
     ) -> None:
         if self._writer is None or self._writer.is_closing():
-            raise ConnectionError("No active TCP connection - cannot send data")
+            _LOGGER.error("No active TCP connecction - cannot send data")
+            return
 
         try:
             if not data.endswith("\n"):
                 data += "\n"
 
             self._writer.write(data.encode("utf-8"))
+            await self._writer.drain()
 
             _LOGGER.debug(f"Command sended: {data.strip()}")
 
@@ -60,13 +120,13 @@ class TcpWriter(WriterBase):
 
     async def read(self) -> str:
         if self._reader is None:
-            raise ConnectionError("Connection don't exist")
+            _LOGGER.error("Connection don't exist")
 
         try:
-            line_bytes = await self._reader.readline()
+            line_bytes = await asyncio.wait_for(self._reader.readline(), timeout=1000.0)
 
             if not line_bytes:
-                raise ConnectionError("Connection don't exist")
+                _LOGGER.error("Connection don't exist")
 
             return line_bytes.decode("utf-8", errors="ignore").strip()
 
@@ -92,10 +152,16 @@ class TcpWriter(WriterBase):
             timeout=5.0
         )
 
+        sock = self._writer.get_extra_info('socket')
+        if sock is not None:
+            import socket
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+
 class Transport():
 
     _connection: WriterBase
     _target: str
+    _subscriptions = None
     _task: asyncio.Task | None = None
     
     def __init__(
@@ -112,12 +178,20 @@ class Transport():
             self._connection = TcpWriter(connection_target)
         elif re.search(serial_port_patern , connection_target):
             pass
+        else:
+            _LOGGER.error(f"Incorrect Communication Port: {connection_target}")
 
-    def write(
+    def register_subscription(self, subscription: Subscription):
+        if self._subscriptions is None:
+            self._subscriptions = []
+
+        self._subscriptions.append(subscription)
+
+    async def write(
             self,
             data: str,
     ) -> None:
-        self._connection.write(data)
+        await self._connection.write(data)
 
     def start_communication(self) -> None:
 
@@ -151,11 +225,29 @@ class Transport():
                 _LOGGER.info(f"Successfuly connected to: {self._target}")
 
                 while True:
-                    
-                    readed = await self._connection.read()
-                    
-                    if(readed):
-                        _LOGGER.info(f"New command has arived: {readed}")
+                    try:
+                        readed = await self._connection.read()
+                        
+                        if(readed):
+                            _LOGGER.info(f"New command has arived: {readed}")
+
+                            if(readed == "??????????"):
+                                continue
+
+                            parsed_data = ParsedData(readed)
+
+                            if(parsed_data.error_occurred() or parsed_data.function not in subscriptableFunction):
+                                continue
+
+                            if(self._subscriptions is not None):
+                                for sub in self._subscriptions:
+                                    if(sub.cover_with_data(parsed_data)):
+                                        await sub.exec_fun(parsed_data)
+                            
+
+                    except asyncio.TimeoutError:
+                        _LOGGER.debug("Sending heartbeat to keep TCP connection alive...")
+                        await self._connection.write("\n")
 
             except asyncio.CancelledError:
                 _LOGGER.info("Stopping Transport loop...")
