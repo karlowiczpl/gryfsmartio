@@ -29,6 +29,27 @@ subscriptableFunction = [
     ParsedFunctions.PRESS_LONG,
 ]
 
+class Driver:
+    _id: int
+    _outputs = []
+    _inputs = []
+    _covers = []
+    _pwms = []
+    _temp = []
+
+    def __init__(
+        self,
+        id: int,
+    ) -> None:
+        self._id = id
+
+class GlobalStates:
+    Inputs = []
+
+    def __init__(self) -> None:
+        pass
+
+
 class ParsedData:
 
     _function: str

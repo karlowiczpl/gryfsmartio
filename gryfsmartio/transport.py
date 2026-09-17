@@ -261,4 +261,17 @@ class Transport():
 
                 await self._connection.close()
                 await asyncio.sleep(3)
+        
+        async def set_led(
+            self,
+            id: int,
+            pin: int,
+            level: int,
+        ) -> None:
+            attempts = 0
+            while attempts < 10:
+                self.write(f"SetLED={id},{pin},{level}")
+                self.write(f"StateLED={id},{pin}")
 
+                await asyncio.sleep(attempts * 0.1)
+                attempts += 1
