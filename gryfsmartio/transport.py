@@ -4,7 +4,7 @@ import re
 import serial_asyncio
 
 from .parsing import ParsedData, ParsedFunctions, Subscription, subscriptableFunction 
-from gryfsmartio.parsing import Driver
+from gryfsmartio.parsing import Driver, GlobalData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -79,12 +79,12 @@ class SerialWriter(WriterBase):
 
     async def close(self) -> None:
         if self._writer is not None:
-            try:
-                self._writer.close()
-                await self._writer.wait_closed()
-            except Exception:
-                pass
-
+            # try: self._writer.close()
+            #     await self._writer.wait_closed()
+            # except Exception:
+            #     pass
+            #
+            pass
         self._reader = None
         self._writer = None
 
@@ -150,7 +150,7 @@ class TcpWriter(WriterBase):
     async def open(self) -> None:
         self._reader, self._writer = await asyncio.wait_for(
             asyncio.open_connection(self._ip, TCP_PORT), 
-            timeout=5.0
+            timeout=1000.0
         )
 
         sock = self._writer.get_extra_info('socket')
@@ -164,7 +164,8 @@ class Transport():
     _target: str
     _subscriptions = None
     _task: asyncio.Task | None = None
-    _drivers_data: list[Driver] = []
+    # _drivers_data: list[Driver] = []
+    _drivers_data: GlobalData
     
     def __init__(
             self,
@@ -172,6 +173,7 @@ class Transport():
         ) -> None:
 
         self._target = connection_target
+        self._drivers_data = GlobalData()
 
         ipv4_patern = r"\b(?:\d{1,3}\.){3}\d{1,3}\b"
         serial_port_patern = r"/dev/tty\S*"
@@ -246,20 +248,12 @@ class Transport():
                                     if(sub.cover_with_data(parsed_data)):
                                         await sub.exec_fun(parsed_data)
 
-                            exist = False
-                            for item in self._drivers_data:
-                                if item.id == parsed_data.id:
-                                    exist = True
+                            driver = self._drivers_data[int(parsed_data.id)]
+                            if parsed_data.is_broadcast:
+                                pass
+                            else:
+                                driver[parsed_data.function][int(parsed_data.parsed_states[1])] = int(parsed_data.parsed_states[2])
 
-                            if not exist:
-                                self._drivers_data.append(Driver(parsed_data.id))
-
-                            for item in self._drivers_data:
-                                if item.id == parsed_data.id:
-                                    if parsed_data.is_broadcast:
-                                        pass
-                                    else:
-                                        item[parsed_data.function][int(parsed_data.parsed_states[1])] = int(parsed_data.parsed_states[2])
 
 
                     except asyncio.TimeoutError:
@@ -285,10 +279,15 @@ class Transport():
         pin: int,
         level: int,
     ) -> None:
-        attempts = 0
-        while attempts < 10:
+        attempts = 1
+        while attempts <= 10:
             await self.write(f"SetLED={id},{pin},{level}")
+            await asyncio.sleep(0.01)
             await self.write(f"StateLED={id},{pin}")
 
-            await asyncio.sleep(attempts * 0.1)
+            if self._drivers_data[id][ParsedFunctions.PWM][pin] == level:
+                return
+
+            await asyncio.sleep(0.1 * attempts)
+
             attempts += 1

@@ -1,6 +1,6 @@
 import logging
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel, Field, EmailStr
 
 _LOGGER = logging.getLogger(__name__)
@@ -117,6 +117,18 @@ class Driver:
 
     def __getitem__(self, key: str) -> list[int]:
         return self.function_map[key]
+
+class GlobalData(Dict):
+    _drivers: dict[int, Driver] = {}
+
+    def __init__(self):
+        pass
+
+    def __getitem__(self, key: int):
+        if key not in self._drivers:
+            self._drivers[key] = Driver(key)
+
+        return self._drivers[key]
 
 class Subscription:
     _function: str

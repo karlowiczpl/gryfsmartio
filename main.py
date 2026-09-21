@@ -14,6 +14,8 @@ async def main():
     transport = Transport("192.168.40.72")
     transport.start_communication()
 
+    _LOGGER.error("START")
+
     await asyncio.sleep(2)
 
     transport.register_subscription(
@@ -27,9 +29,9 @@ async def main():
 
     while True:
         await transport.set_led(1, 3, 100)
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5)
         await transport.set_led(1, 3, 0)
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5)
         
 
 if __name__ == "__main__":
