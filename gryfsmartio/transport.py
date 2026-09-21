@@ -3,7 +3,8 @@ import logging
 import re
 import serial_asyncio
 
-from .parsing import ParsedData, Subscription, subscriptableFunction 
+from .parsing import ParsedData, ParsedFunctions, Subscription, subscriptableFunction 
+from gryfsmartio.parsing import Driver
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -96,7 +97,7 @@ class TcpWriter(WriterBase):
             self,
             ip: str,
     ) -> None:
-        self._ip = ip
+        self._ip = ip 
 
     async def write(
         self,
@@ -163,6 +164,7 @@ class Transport():
     _target: str
     _subscriptions = None
     _task: asyncio.Task | None = None
+    _drivers_data: list[Driver] = []
     
     def __init__(
             self,
@@ -243,7 +245,22 @@ class Transport():
                                 for sub in self._subscriptions:
                                     if(sub.cover_with_data(parsed_data)):
                                         await sub.exec_fun(parsed_data)
-                            
+
+                            exist = False
+                            for item in self._drivers_data:
+                                if item.id == parsed_data.id:
+                                    exist = True
+
+                            if not exist:
+                                self._drivers_data.append(Driver(parsed_data.id))
+
+                            for item in self._drivers_data:
+                                if item.id == parsed_data.id:
+                                    if parsed_data.is_broadcast:
+                                        pass
+                                    else:
+                                        item[parsed_data.function][int(parsed_data.parsed_states[1])] = int(parsed_data.parsed_states[2])
+
 
                     except asyncio.TimeoutError:
                         _LOGGER.debug("Sending heartbeat to keep TCP connection alive...")
@@ -262,16 +279,16 @@ class Transport():
                 await self._connection.close()
                 await asyncio.sleep(3)
         
-        async def set_led(
-            self,
-            id: int,
-            pin: int,
-            level: int,
-        ) -> None:
-            attempts = 0
-            while attempts < 10:
-                self.write(f"SetLED={id},{pin},{level}")
-                self.write(f"StateLED={id},{pin}")
+    async def set_led(
+        self,
+        id: int,
+        pin: int,
+        level: int,
+    ) -> None:
+        attempts = 0
+        while attempts < 10:
+            await self.write(f"SetLED={id},{pin},{level}")
+            await self.write(f"StateLED={id},{pin}")
 
-                await asyncio.sleep(attempts * 0.1)
-                attempts += 1
+            await asyncio.sleep(attempts * 0.1)
+            attempts += 1

@@ -1,5 +1,8 @@
 import logging
 
+from typing import List, Optional
+from pydantic import BaseModel, Field, EmailStr
+
 _LOGGER = logging.getLogger(__name__)
 
 class ParsedFunctions():
@@ -28,27 +31,6 @@ subscriptableFunction = [
     ParsedFunctions.PRESS_SHORT,
     ParsedFunctions.PRESS_LONG,
 ]
-
-class Driver:
-    _id: int
-    _outputs = []
-    _inputs = []
-    _covers = []
-    _pwms = []
-    _temp = []
-
-    def __init__(
-        self,
-        id: int,
-    ) -> None:
-        self._id = id
-
-class GlobalStates:
-    Inputs = []
-
-    def __init__(self) -> None:
-        pass
-
 
 class ParsedData:
 
@@ -106,6 +88,35 @@ class ParsedData:
             return int(self._parsed_states[1])
 
         return 0
+
+class Driver:
+    id: int
+    inputs: list[int]
+    outputs: list[int]
+    pwms: list[int]
+    covers: list[int]
+
+    def __init__(
+        self,
+        id: int
+    ) -> None:
+        self.id = id
+        self.inputs: list[int] = [0] * 20
+        self.outputs: list[int] = [0] * 20
+        self.pwms: list[int] = [0] * 20
+        self.covers: list[int] = [0] * 20
+
+    @property
+    def function_map(self) -> dict[str, list[int]]:
+        return {
+            ParsedFunctions.INPUTS: self.inputs,
+            ParsedFunctions.OUTPUTS: self.outputs,
+            ParsedFunctions.PWM: self.pwms,
+            ParsedFunctions.COVER: self.covers,
+        }
+
+    def __getitem__(self, key: str) -> list[int]:
+        return self.function_map[key]
 
 class Subscription:
     _function: str

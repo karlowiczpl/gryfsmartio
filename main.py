@@ -10,7 +10,8 @@ async def sample_function(parsed_data):
     _LOGGER.error("Testowy ERROR")
 
 async def main():
-    transport = Transport("127.0.0.1")
+    # transport = Transport("127.0.0.1")
+    transport = Transport("192.168.40.72")
     transport.start_communication()
 
     await asyncio.sleep(2)
@@ -25,10 +26,10 @@ async def main():
     )
 
     while True:
-        await transport.write("SetLED=1,3,100")
-        await asyncio.sleep(3)
-        await transport.write("SetLED=1,3,0")
-        await asyncio.sleep(3)
+        await transport.set_led(1, 3, 100)
+        await asyncio.sleep(1)
+        await transport.set_led(1, 3, 0)
+        await asyncio.sleep(1)
         
 
 if __name__ == "__main__":

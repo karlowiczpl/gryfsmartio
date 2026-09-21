@@ -1,0 +1,11 @@
+LICENCE
+pyproject.toml
+setup.cfg
+gryfsmartio/__init__.py
+gryfsmartio/parsing.py
+gryfsmartio/transport.py
+gryfsmartio.egg-info/PKG-INFO
+gryfsmartio.egg-info/SOURCES.txt
+gryfsmartio.egg-info/dependency_links.txt
+gryfsmartio.egg-info/requires.txt
+gryfsmartio.egg-info/top_level.txt
