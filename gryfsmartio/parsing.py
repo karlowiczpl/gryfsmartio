@@ -4,8 +4,6 @@ import logging
 from typing import List, Optional, Dict
 from pydantic import BaseModel, Field, EmailStr
 
-from gryfsmartio.types import PWMs, PWM
-
 _LOGGER = logging.getLogger(__name__)
 
 class ParsedFunctions():

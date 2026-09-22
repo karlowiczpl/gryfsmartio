@@ -41,7 +41,7 @@ class PWMControler:
             if current_state == new_task.expected_state:
                 break
 
-            delay = 0.1 * (11 - new_task.attempts)
+            delay = 0.2 * (11 - new_task.attempts)
             await asyncio.sleep(delay)
             
             new_task.attempts -= 1
