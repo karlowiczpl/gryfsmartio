@@ -1,6 +1,9 @@
 from __future__ import annotations
 import asyncio
+from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
+
+from gryfsmartio.parsing import ParsedFunctions, Subscription
 
 if TYPE_CHECKING:
     from gryfsmartio.transport import Transport
@@ -15,11 +18,53 @@ class Task:
 
 
 class PWMControler:
-    def __init__(self, transport: Transport) -> None:
+    def __init__(
+        self,
+        transport: Transport
+    ) -> None:
         self._transport = transport
         self._tasks: list[Task] = []
 
-    async def set_led(self, id: int, pin: int, power: int) -> None:
+    async def get_state(
+        self,
+        id: int,
+        pin: int
+    ) -> int:
+        event = asyncio.Event()
+
+        async def fun(data):
+            event.set()
+
+        subscription = Subscription(
+            hardware_id=id,
+            hardware_pin=pin,
+            function=ParsedFunctions.PWM,
+            async_fun_ptr=fun,
+        )
+        self._transport.register_subscription(subscription)
+
+        try:
+            attempts = 1
+            while attempts <= 3:
+                try:
+                    await asyncio.wait_for(event.wait(), timeout=attempts*0.1)
+
+                    return self._transport._drivers_data[id][ParsedFunctions.PWM][pin]
+                except asyncio.TimeoutError:
+                    pass
+
+                attempts += 1
+        finally:
+            self._transport.unregister_subscription(subscription)
+
+        return 0
+        
+    async def set(
+        self,
+        id: int,
+        pin: int,
+        power: int
+    ) -> None:
         for task in self._tasks[:]:
             if task.attempts <= 0:
                 self._tasks.remove(task)
@@ -51,6 +96,9 @@ class PWMControler:
 
 
 class Api:
-    def __init__(self, transport: Transport) -> None:
+    def __init__(
+        self,
+        transport: Transport
+    ) -> None:
         self._transport = transport
-        self._pwm_controller = PWMControler(transport)
+        self.pwm = PWMControler(transport)

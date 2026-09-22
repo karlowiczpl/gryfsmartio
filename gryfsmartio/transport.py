@@ -191,6 +191,12 @@ class Transport():
 
         self._subscriptions.append(subscription)
 
+    def unregister_subscription(self, subscription: Subscription):
+        if self._subscriptions is None: 
+            self._subscriptions = []
+
+        self._subscriptions.remove(subscription)
+
     async def write(
             self,
             data: str,
