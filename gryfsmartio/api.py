@@ -47,6 +47,7 @@ class PWMControler:
             attempts = 1
             while attempts <= 3:
                 try:
+                    await self._transport.write(f"StateLED={id},{pin}\r\n")
                     await asyncio.wait_for(event.wait(), timeout=attempts*0.1)
 
                     return self._transport._drivers_data[id][ParsedFunctions.PWM][pin]
@@ -65,6 +66,12 @@ class PWMControler:
         pin: int,
         power: int
     ) -> None:
+
+        async def set_led(id, pin, level):
+            await self._transport.write(f"SetLED={id},{pin},{level}")
+            await asyncio.sleep(0.01)
+            await self._transport.write(f"StateLED={id},{pin}")
+
         for task in self._tasks[:]:
             if task.attempts <= 0:
                 self._tasks.remove(task)
@@ -80,7 +87,7 @@ class PWMControler:
         self._tasks.append(new_task)
 
         while new_task.attempts > 0:
-            await self._transport.set_led(new_task.id, new_task.pin, new_task.expected_state)
+            await set_led(new_task.id, new_task.pin, new_task.expected_state)
 
             delay = 0.2 * (11 - new_task.attempts)
             await asyncio.sleep(delay)

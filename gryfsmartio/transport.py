@@ -278,13 +278,3 @@ class Transport():
 
                 await self._connection.close()
                 await asyncio.sleep(3)
-
-    async def set_led(
-        self,
-        id: int,
-        pin: int,
-        level: int,
-    ) -> None:
-        await self.write(f"SetLED={id},{pin},{level}")
-        await asyncio.sleep(0.01)
-        await self.write(f"StateLED={id},{pin}")
