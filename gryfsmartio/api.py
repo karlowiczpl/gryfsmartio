@@ -37,12 +37,12 @@ class PWMControler:
         while new_task.attempts > 0:
             await self._transport.set_led(new_task.id, new_task.pin, new_task.expected_state)
 
+            delay = 0.2 * (11 - new_task.attempts)
+            await asyncio.sleep(delay)
+
             current_state = self._transport._drivers_data[id]["LED"][pin]
             if current_state == new_task.expected_state:
                 break
-
-            delay = 0.2 * (11 - new_task.attempts)
-            await asyncio.sleep(delay)
             
             new_task.attempts -= 1
 
