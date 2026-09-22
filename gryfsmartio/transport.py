@@ -127,7 +127,7 @@ class TcpWriter(WriterBase):
             line_bytes = await asyncio.wait_for(self._reader.readline(), timeout=1000.0)
 
             if not line_bytes:
-                _LOGGER.error("Connection don't exist")
+                raise ConnectionResetError("Connection closed by remote peer (EOF)")
 
             return line_bytes.decode("utf-8", errors="ignore").strip()
 
