@@ -3,6 +3,7 @@ import logging
 
 from gryfsmartio.transport import Transport
 from gryfsmartio.parsing import Subscription
+from gryfsmartio.api import Api
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,10 +28,13 @@ async def main():
         ),
     )
 
+    api = Api(transport)
+    await api._pwm_controller.set_led(1, 3, 100)
+
     while True:
-        await transport.set_led(1, 3, 100)
+        await api._pwm_controller.set_led(1, 3, 100)
         await asyncio.sleep(0.5)
-        await transport.set_led(1, 3, 0)
+        await api._pwm_controller.set_led(1, 3, 0)
         await asyncio.sleep(0.5)
         
 

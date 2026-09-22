@@ -272,22 +272,13 @@ class Transport():
 
                 await self._connection.close()
                 await asyncio.sleep(3)
-        
+
     async def set_led(
         self,
         id: int,
         pin: int,
         level: int,
     ) -> None:
-        attempts = 1
-        while attempts <= 10:
-            await self.write(f"SetLED={id},{pin},{level}")
-            await asyncio.sleep(0.01)
-            await self.write(f"StateLED={id},{pin}")
-
-            if self._drivers_data[id][ParsedFunctions.PWM][pin] == level:
-                return
-
-            await asyncio.sleep(0.1 * attempts)
-
-            attempts += 1
+        await self.write(f"SetLED={id},{pin},{level}")
+        await asyncio.sleep(0.01)
+        await self.write(f"StateLED={id},{pin}")
