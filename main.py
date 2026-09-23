@@ -4,6 +4,7 @@ import logging
 from gryfsmartio.transport import Transport
 from gryfsmartio.parsing import Subscription
 from gryfsmartio.api import Api
+from gryfsmartio.socket import GryfExpertSocket, Socket
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -14,6 +15,9 @@ async def main():
     # transport = Transport("127.0.0.1")
     transport = Transport("192.168.40.72")
     transport.start_communication()
+
+    socket = GryfExpertSocket(transport)
+    server_task = asyncio.create_task(socket.communication_task())
 
     _LOGGER.error("START")
 
@@ -29,14 +33,14 @@ async def main():
     )
 
     api = Api(transport)
-    await api._pwm_controller.set_led(1, 3, 100)
 
     while True:
-        await api._pwm_controller.set_led(1, 3, 100)
+        # await api.pwm.set(1, 3, 100)
         await asyncio.sleep(0.5)
-        await api._pwm_controller.set_led(1, 3, 0)
+        # await api.pwm.set(1, 3, 0)
         await asyncio.sleep(0.5)
-        
+
+        # await socket.send("TEST\r\n")
 
 if __name__ == "__main__":
     try:

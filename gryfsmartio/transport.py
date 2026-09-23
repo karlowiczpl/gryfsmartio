@@ -246,7 +246,8 @@ class Transport():
 
                             parsed_data = ParsedData(readed)
 
-                            if(parsed_data.error_occurred() or parsed_data.function not in subscriptableFunction):
+                            # if(parsed_data.error_occurred() or parsed_data.function not in subscriptableFunction):
+                            if parsed_data.error_occurred():
                                 continue
 
                             if(self._subscriptions is not None):
@@ -257,7 +258,7 @@ class Transport():
                             driver = self._drivers_data[int(parsed_data.id)]
                             if parsed_data.is_broadcast:
                                 pass
-                            else:
+                            elif parsed_data.function in subscriptableFunction:
                                 driver[parsed_data.function][int(parsed_data.parsed_states[1])] = int(parsed_data.parsed_states[2])
 
 

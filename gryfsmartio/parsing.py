@@ -41,6 +41,7 @@ class ParsedData:
     _parsed_states: list[str]
     _broadcast_function: bool
     _error = True
+    _orginal: str
 
     def __init__(self, data: str) -> None:
 
@@ -48,6 +49,7 @@ class ParsedData:
             return
 
         try:
+            self._orginal = data
             parts = data.split('=', 1)
 
             self._function = parts[0].upper()
@@ -89,6 +91,10 @@ class ParsedData:
             return int(self._parsed_states[1])
 
         return 0
+
+    @property
+    def orginal(self) -> str:
+        return self._orginal
 
 class Driver:
     id: int
@@ -151,6 +157,9 @@ class Subscription:
         self._fun_ptr = async_fun_ptr
 
     def cover_with_data(self, parsed_data: ParsedData) -> bool:
+        if(self._function == "all"):
+            return True
+
         if(parsed_data.function.strip() != self._function):
             return False
 
