@@ -43,10 +43,12 @@ async def main():
     while True:
         # await transport.write(f"PING=1\r\n")
         # await transport.write(f"AT+Search=0,1\r\n")
-        # await api.pwm.set(1, 3, 100)
+        # await api.pwm.set(1, 1, 100)
         await asyncio.sleep(0.5)
-        # await api.pwm.set(1, 3, 0)
+        _LOGGER.error(await api.output.set(3, 1, 2))
         await asyncio.sleep(0.5)
+
+        _LOGGER.error(await api.output.set(3, 1, 1))
 
         # await socket.send("TEST\r\n")
 

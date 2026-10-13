@@ -164,7 +164,6 @@ class Transport():
     _target: str
     _subscriptions = None
     _task: asyncio.Task | None = None
-    # _drivers_data: list[Driver] = []
     _drivers_data: GlobalData
     
     def __init__(
@@ -257,7 +256,11 @@ class Transport():
 
                             driver = self._drivers_data[int(parsed_data.id)]
                             if parsed_data.is_broadcast:
-                                pass
+                                i = 0
+                                for item in parsed_data.parsed_states:
+                                    driver[parsed_data.function][i] = int(item)
+                                    i += 1
+
                             elif parsed_data.function in subscriptableFunction:
                                 driver[parsed_data.function][int(parsed_data.parsed_states[1])] = int(parsed_data.parsed_states[2])
 

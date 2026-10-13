@@ -151,6 +151,70 @@ class Supervisor:
         else:
             await self._transport.write(f"AT+Serach=0,{module_id}\r\n")
 
+class OutputController:
+
+    def __init__(
+        self,
+        transport: Transport,
+    ) -> None:
+        self._transport = transport
+
+    async def __set_out(
+        self,
+        hardware_id,
+        hardware_pin,
+        state,
+    ) -> None:
+        if hardware_pin <= 6:
+            states = [0] * 6
+        else:
+            states = [0] * 8
+
+        states[hardware_pin-1] = state
+        states_str = ",".join(map(str, states))
+
+        await self._transport.write(f"AT+SetOut={hardware_id},{states_str}\r\n")
+
+    async def set(
+        self,
+        hardware_id: int,
+        hardware_pin: int,
+        state: int,
+    ) -> None:
+        event = asyncio.Event()
+
+        async def fun(data):
+            event.set()
+
+        subscription = Subscription(
+            hardware_id,
+            hardware_pin,
+            ParsedFunctions.OUTPUTS,
+            fun,
+        )
+        self._transport.register_subscription(subscription)
+
+        try:
+            attempts = 1
+            while attempts <= 3:
+                try:
+                    await self.__set_out(
+                        hardware_id,
+                        hardware_pin,
+                        state
+                    )
+                    await asyncio.wait_for(event.wait(), timeout=attempts*0.1)
+
+                    return self._transport._drivers_data[hardware_id][ParsedFunctions.OUTPUTS][hardware_pin]
+
+                except asyncio.TimeoutError:
+                    pass
+
+                attempts += 1
+        finally:
+            self._transport.unregister_subscription(subscription)
+                    
+
 class Api:
     def __init__(
         self,
@@ -159,3 +223,4 @@ class Api:
         self._transport = transport
         self.pwm = PWMControler(transport)
         self.supervisor = Supervisor(transport)
+        self.output = OutputController(transport)
