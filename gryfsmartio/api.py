@@ -1,12 +1,15 @@
 from __future__ import annotations
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
-from gryfsmartio.parsing import ParsedFunctions, Subscription
+from gryfsmartio.parsing import FindSubscription, ParsedFunctions, Subscription, ParsedData
 
 if TYPE_CHECKING:
     from gryfsmartio.transport import Transport
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class Task:
@@ -101,6 +104,52 @@ class PWMControler:
         if new_task in self._tasks:
             self._tasks.remove(new_task)
 
+class Supervisor:
+    _transport: Transport
+    _finded_drivers: dict={}
+
+    async def find_subscription(
+        self,
+        parsed_data: ParsedData,
+    ) -> None:
+        self._finded_drivers[int(parsed_data.id)] = True
+
+        _LOGGER.error(parsed_data.orginal)
+
+    def __init__(
+        self,
+        transport: Transport,
+    ) -> None:
+        transport.register_subscription(FindSubscription(self.find_subscription))
+
+        self._transport = transport
+
+    async def search_module(
+        self,
+        module_id: int=0,
+        clear: bool=False,
+    ) -> None:
+        if clear:
+            self._finded_drivers.clear()
+
+        if module_id == 0:
+            for i in range(1,255):
+                attempts = 3
+                while attempts:
+                    attempts -= 1
+
+                    if self._finded_drivers.get(i, 0):
+                        continue
+
+                    await self._transport.write(f"AT+Search=0,{i}\r\n")
+
+                    await asyncio.sleep(0.05)
+
+                    if attempts == 0:
+                        return
+
+        else:
+            await self._transport.write(f"AT+Serach=0,{module_id}\r\n")
 
 class Api:
     def __init__(
@@ -109,3 +158,4 @@ class Api:
     ) -> None:
         self._transport = transport
         self.pwm = PWMControler(transport)
+        self.supervisor = Supervisor(transport)

@@ -157,6 +157,10 @@ class Subscription:
         self._fun_ptr = async_fun_ptr
 
     def cover_with_data(self, parsed_data: ParsedData) -> bool:
+        if parsed_data._function == ParsedFunctions.FIND:
+            if self._function == ParsedFunctions.FIND:
+                return True
+
         if(self._function == "all"):
             return True
 
@@ -175,3 +179,14 @@ class Subscription:
     async def exec_fun(self, parsed_data):
         await self._fun_ptr(parsed_data)
 
+class FindSubscription(Subscription):
+    def __init__(
+        self,
+        async_fun_ptr,
+    ) -> None:
+        super().__init__(
+            0,
+            0,
+            ParsedFunctions.FIND,
+            async_fun_ptr,
+        )

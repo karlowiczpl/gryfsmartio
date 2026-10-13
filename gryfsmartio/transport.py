@@ -181,7 +181,7 @@ class Transport():
         if re.search(ipv4_patern , connection_target):
             self._connection = TcpWriter(connection_target)
         elif re.search(serial_port_patern , connection_target):
-            pass
+            self._connection = SerialWriter(connection_target)
         else:
             _LOGGER.error(f"Incorrect Communication Port: {connection_target}")
 
@@ -242,7 +242,7 @@ class Transport():
                             _LOGGER.info(f"New command has arived: {readed}")
 
                             if(readed == "??????????"):
-                                continue
+                               continue
 
                             parsed_data = ParsedData(readed)
 
