@@ -245,26 +245,36 @@ class Transport():
 
                             parsed_data = ParsedData(readed)
 
-                            # if(parsed_data.error_occurred() or parsed_data.function not in subscriptableFunction):
-                            if parsed_data.error_occurred():
+                            if(parsed_data.error_occurred() or parsed_data.function not in subscriptableFunction):
                                 continue
 
                             if(self._subscriptions is not None):
                                 for sub in self._subscriptions:
                                     if(sub.cover_with_data(parsed_data)):
+                                        driver = self._drivers_data[int(parsed_data.id)]
+
+                                        if parsed_data.is_broadcast:
+                                            for i, item in enumerate(parsed_data.parsed_states):
+                                                try:
+                                                    driver[parsed_data.function][i] = int(item)
+                                                except IndexError:
+                                                    _LOGGER.warning(f"Too many values in the command! No space at index {i} for function {parsed_data.function}")
+
+                                        elif parsed_data.function == ParsedFunctions.PRESS_SHORT:
+                                            driver[parsed_data.function][int(parsed_data.parsed_states[1])] = 2
+
+                                        elif parsed_data.function == ParsedFunctions.PRESS_LONG:
+                                            driver[parsed_data.function][int(parsed_data.parsed_states[1])] = 3
+                                            
+                                        elif parsed_data.function in subscriptableFunction:
+                                            try:
+                                                index = int(parsed_data.parsed_states[1])
+                                                value = int(parsed_data.parsed_states[2])
+                                                driver[parsed_data.function][index] = value
+                                            except IndexError:
+                                                _LOGGER.warning(f"Too many values in the command! No space at index {i} for function {parsed_data.function}")
+
                                         await sub.exec_fun(parsed_data)
-
-                            driver = self._drivers_data[int(parsed_data.id)]
-                            if parsed_data.is_broadcast:
-                                i = 0
-                                for item in parsed_data.parsed_states:
-                                    driver[parsed_data.function][i] = int(item)
-                                    i += 1
-
-                            elif parsed_data.function in subscriptableFunction:
-                                driver[parsed_data.function][int(parsed_data.parsed_states[1])] = int(parsed_data.parsed_states[2])
-
-
 
                     except asyncio.TimeoutError:
                         _LOGGER.debug("Sending heartbeat to keep TCP connection alive...")

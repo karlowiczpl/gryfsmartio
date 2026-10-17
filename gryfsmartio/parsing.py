@@ -120,6 +120,8 @@ class Driver:
             ParsedFunctions.OUTPUTS: self.outputs,
             ParsedFunctions.PWM: self.pwms,
             ParsedFunctions.COVER: self.covers,
+            ParsedFunctions.PRESS_SHORT: self.inputs,
+            ParsedFunctions.PRESS_LONG: self.inputs,
         }
 
     def __getitem__(self, key: str) -> list[int]:
