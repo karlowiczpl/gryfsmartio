@@ -141,7 +141,6 @@ class Supervisor:
                         continue
 
                     await self._transport.write(f"AT+Search=0,{i}\r\n")
-                    _LOGGER.error(f"AT+Search=0,{i}\r\n")
 
                     await asyncio.sleep(0.1)
 
