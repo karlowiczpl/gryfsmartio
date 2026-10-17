@@ -11,7 +11,6 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-
 class Task:
     def __init__(self, id: int, pin: int, expected_state: int) -> None:
         self.id = id
@@ -150,6 +149,12 @@ class Supervisor:
 
         else:
             await self._transport.write(f"AT+Serach=0,{module_id}\r\n")
+
+    async def reset(
+        self,
+        module_id: int=0
+    ) -> None:
+        await self._transport.write(f"AT+RST={module_id}\r\n")
 
 class OutputController:
 

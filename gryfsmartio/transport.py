@@ -265,7 +265,7 @@ class Transport():
 
                                         elif parsed_data.function == ParsedFunctions.PRESS_LONG:
                                             driver[parsed_data.function][int(parsed_data.parsed_states[1])] = 3
-                                            
+
                                         elif parsed_data.function in subscriptableFunction:
                                             try:
                                                 index = int(parsed_data.parsed_states[1])

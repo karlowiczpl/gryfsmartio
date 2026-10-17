@@ -22,16 +22,16 @@ async def main():
 
     _LOGGER.error("START")
 
-    await asyncio.sleep(2)
+    await asyncio.sleep(1)
 
     async def find_subsctiption(parsed_data):
         _LOGGER.error(parsed_data.orginal)
 
     transport.register_subscription(
         Subscription(
-            hardware_id=2,
+            hardware_id=1,
             hardware_pin=1,
-            function="PS",
+            function="AT+RST",
             async_fun_ptr=sample_function
         ),
     )
@@ -39,16 +39,20 @@ async def main():
     api = Api(transport)
 
     await api.supervisor.search_module(clear=True)
+    await api.output.set(1, 1, 1)
 
     while True:
         # await transport.write(f"PING=1\r\n")
         # await transport.write(f"AT+Search=0,1\r\n")
         # await api.pwm.set(1, 1, 100)
-        await asyncio.sleep(0.5)
-        _LOGGER.error(await api.output.set(3, 1, 2))
-        await asyncio.sleep(0.5)
+        await api.supervisor.reset(1)
+        await asyncio.sleep(5)
 
-        _LOGGER.error(await api.output.set(3, 1, 1))
+        await asyncio.sleep(1)
+
+        await api.output.set(1,1,1)
+
+        await asyncio.sleep(10)
 
         # await socket.send("TEST\r\n")
 
