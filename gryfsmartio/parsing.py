@@ -32,6 +32,7 @@ subscriptableFunction = [
     ParsedFunctions.TEMP,
     ParsedFunctions.PRESS_SHORT,
     ParsedFunctions.PRESS_LONG,
+    ParsedFunctions.FIND,
 ]
 
 class ParsedData:
