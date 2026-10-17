@@ -113,8 +113,6 @@ class Supervisor:
     ) -> None:
         self._finded_drivers[int(parsed_data.id)] = True
 
-        _LOGGER.error(parsed_data.orginal)
-
     def __init__(
         self,
         transport: Transport,
