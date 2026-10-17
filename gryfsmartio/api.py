@@ -154,7 +154,7 @@ class Supervisor:
         self,
         module_id: int=0
     ) -> None:
-        await self._transport.write(f"AT+RST={module_id}\r\n")
+        await self._transport.write(f"AT+RST={module_id}")
 
 class OutputController:
 
