@@ -104,6 +104,7 @@ class Driver:
     outputs: list[int]
     pwms: list[int]
     covers: list[int]
+    temps: list[float]
 
     def __init__(
         self,
@@ -114,9 +115,10 @@ class Driver:
         self.outputs: list[int] = [0] * 20
         self.pwms: list[int] = [0] * 20
         self.covers: list[int] = [0] * 20
+        self.temps: list[float] = [0] * 20
 
     @property
-    def function_map(self) -> dict[str, list[int]]:
+    def function_map(self) -> dict[str, list[int] | list[float]]:
         return {
             ParsedFunctions.INPUTS: self.inputs,
             ParsedFunctions.OUTPUTS: self.outputs,
@@ -124,9 +126,10 @@ class Driver:
             ParsedFunctions.COVER: self.covers,
             ParsedFunctions.PRESS_SHORT: self.inputs,
             ParsedFunctions.PRESS_LONG: self.inputs,
+            ParsedFunctions.TEMP: self.temps,
         }
 
-    def __getitem__(self, key: str) -> list[int]:
+    def __getitem__(self, key: str) -> list[int] | list[float]:
         return self.function_map[key]
 
 class GlobalData(Dict):

@@ -269,6 +269,10 @@ class Transport():
                                         elif parsed_data.function == ParsedFunctions.FIND:
                                             pass
 
+                                        elif parsed_data.function == ParsedFunctions.TEMP:
+                                            driver[parsed_data.function][int(parsed_data.parsed_states[1])] = float(f"{parsed_data.parsed_states[2]}.{parsed_data.parsed_states[3]}")
+
+
                                         elif parsed_data.function in subscriptableFunction:
                                             try:
                                                 index = int(parsed_data.parsed_states[1])
@@ -295,3 +299,7 @@ class Transport():
 
                 await self._connection.close()
                 await asyncio.sleep(3)
+
+    @property
+    def drivers(self) -> GlobalData:
+        return self._drivers_data

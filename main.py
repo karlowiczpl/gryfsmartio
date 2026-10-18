@@ -9,7 +9,7 @@ from gryfsmartio.socket import GryfExpertSocket, Socket
 _LOGGER = logging.getLogger(__name__)
 
 async def sample_function(parsed_data):
-    _LOGGER.error(f"Testowy ERROR {parsed_data.parsed_states[0]}")
+    _LOGGER.error(f"Testowy ERROR {float(f"{parsed_data.parsed_states[2]}.{parsed_data.parsed_states[3]}")}")
 
 async def main():
     # transport = Transport("127.0.0.1")
@@ -31,7 +31,7 @@ async def main():
         Subscription(
             hardware_id=1,
             hardware_pin=1,
-            function="AT+RST",
+            function="T",
             async_fun_ptr=sample_function
         ),
     )
@@ -45,14 +45,13 @@ async def main():
         # await transport.write(f"PING=1\r\n")
         # await transport.write(f"AT+Search=0,1\r\n")
         # await api.pwm.set(1, 1, 100)
-        await api.supervisor.reset(1)
+        # await api.supervisor.reset(1)
         await asyncio.sleep(5)
 
-        await asyncio.sleep(1)
+        await transport.write("T=1,1,24,1\r\n")
 
-        await api.output.set(1,1,1)
+        # await api.output.set(1,1,1)
 
-        await asyncio.sleep(10)
 
         # await socket.send("TEST\r\n")
 
