@@ -144,6 +144,12 @@ class GlobalData(Dict):
 
         return self._drivers[key]
 
+    def __iter__(self):
+        return iter(self._drivers.values())
+
+    def __len__(self):
+        return len(self._drivers)
+
 class Subscription:
     _function: str
     _id: int

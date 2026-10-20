@@ -154,6 +154,27 @@ class Supervisor:
     ) -> None:
         await self._transport.write(f"AT+RST={module_id}\r\n")
 
+    async def restore_states(
+        self,
+    ) -> None:
+        for driver in self._transport._drivers_data:
+            if driver.outputs[7] != 0 or driver.outputs[8] != 0:
+                states = [0] * 8
+                for i in range(8):
+                    states[i] = driver.outputs[i+1]
+
+            elif any(driver.outputs[:7]):
+                states = [0] * 6
+                for i in range(6):
+                    states[i] = driver.outputs[i+1]
+
+            else:
+                continue
+
+            states_str = ",".join(map(str, states))
+            await self._transport.write(f"AT+SetOut={driver.outputs[0]},{states_str}\r\n")
+
+
 class OutputController:
 
     def __init__(
@@ -218,6 +239,69 @@ class OutputController:
             self._transport.unregister_subscription(subscription)
                     
 
+class CoverControler:
+
+    def __init__(
+        self,
+        transport: Transport,
+    ) -> None:
+        self._transport = transport
+
+    async def __set_cover(
+        self,
+        hardware_id,
+        hardware_pin,
+        state,
+        time,
+    ) -> None:
+        states = [0] * 4
+        states[hardware_pin-1] = state
+        states_str = ",".join(map(str, states))
+
+        sum_control = hardware_id + states[0] + states[1] + states[2] + states[3] + time
+
+        await self._transport.write(f"AT+SetRol={hardware_id},{time},{states_str},{sum_control}\r\n")
+        _LOGGER.error(f"AT+SetRol={hardware_id},{time},{states_str},{sum_control}\r\n")
+
+    async def set(
+        self,
+        hardware_id: int,
+        hardware_pin: int,
+        state: int,
+        time: int,
+    ) -> None:
+        event = asyncio.Event()
+
+        async def fun(data):
+            event.set()
+
+        subscription = Subscription(
+            hardware_id,
+            hardware_pin,
+            ParsedFunctions.COVER,
+            fun,
+        )
+        self._transport.register_subscription(subscription)
+
+        try:
+            attempts = 1
+            while attempts <= 3:
+                try:
+                    await self.__set_cover(
+                        hardware_id,
+                        hardware_pin,
+                        state,
+                        time,
+                    )
+                    await asyncio.wait_for(event.wait(), timeout=attempts*0.1)
+
+                    return self._transport._drivers_data[hardware_id][ParsedFunctions.COVER][hardware_pin]
+
+                except asyncio.TimeoutError:
+                    pass
+        finally:
+            self._transport.unregister_subscription(subscription)
+
 class Api:
     def __init__(
         self,
@@ -227,3 +311,4 @@ class Api:
         self.pwm = PWMControler(transport)
         self.supervisor = Supervisor(transport)
         self.output = OutputController(transport)
+        self.cover = CoverControler(transport)

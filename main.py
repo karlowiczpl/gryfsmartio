@@ -41,19 +41,13 @@ async def main():
     await api.supervisor.search_module(clear=True)
     await api.output.set(1, 1, 1)
 
-    while True:
-        # await transport.write(f"PING=1\r\n")
-        # await transport.write(f"AT+Search=0,1\r\n")
-        # await api.pwm.set(1, 1, 100)
-        # await api.supervisor.reset(1)
-        await asyncio.sleep(5)
+    await asyncio.sleep(2)
 
-        await transport.write("T=1,1,24,1\r\n")
+    await api.supervisor.reset()
 
-        # await api.output.set(1,1,1)
+    await asyncio.sleep(2)
 
-
-        # await socket.send("TEST\r\n")
+    await api.supervisor.restore_states()
 
 if __name__ == "__main__":
     try:
